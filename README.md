@@ -1,23 +1,41 @@
 # agent-skills
 
-Reusable, project-agnostic Agent Skills (SKILL.md format, `anthropics/skills`
-convention). These are the cross-cutting skills that don't belong to any one
-project — see [`writing-skills`](./writing-skills/SKILL.md) for the rule on
-what counts as cross-cutting vs. project-specific, and where project-specific
-skills should live instead (not in this repo).
+Reusable Agent Skills (SKILL.md format, `anthropics/skills` convention).
 
-**Read [`writing-skills`](./writing-skills/SKILL.md) before adding anything here.**
+## Install
+
+```sh
+git clone https://github.com/genji1024/agent-skills.git
+cd agent-skills && ./install.sh
+```
+
+This symlinks `~/.agents/skills` to this repo's `skills/` directory (replacing
+it if it already exists). Re-run `install.sh` any time after a `git pull` to
+keep the symlink current — nothing else to do, the symlink already tracks
+new/removed skills automatically.
 
 ## Contents
 
-- [`writing-skills`](./writing-skills/SKILL.md) — how to write/place a skill
-- [`general`](./general/SKILL.md) — baseline rules for every task
-- [`environment`](./environment/SKILL.md) — facts about the container this
-  runs in (from the `g-ohara/dotfiles` opencode setup)
-- [`session-lessons`](./session-lessons/SKILL.md) — extract lessons from a
-  session and turn them into skill updates
-- [`commit-message`](./commit-message/SKILL.md) — commit message generation,
-  matching a repo's existing convention
-- [`cpp-coursework/`](./cpp-coursework/) — skills for a specific C++/GitLab
-  course project (`doc-writing`, `mr-review`); not project-agnostic, but
-  scoped by its own description so it doesn't leak into unrelated work
+**Cross-cutting** (apply regardless of project — see
+[`skills/writing-skills`](./skills/writing-skills/SKILL.md) for the rule on
+what counts as cross-cutting vs. project-specific):
+
+- [`writing-skills`](./skills/writing-skills/SKILL.md) — how to write/place a skill
+- [`general`](./skills/general/SKILL.md) — baseline rules for every task
+- [`environment`](./skills/environment/SKILL.md) — facts about the container
+  this runs in (from the `g-ohara/dotfiles` opencode setup)
+- [`session-lessons`](./skills/session-lessons/SKILL.md) — extract lessons
+  from a session and turn them into skill updates
+- [`commit-message`](./skills/commit-message/SKILL.md) — commit message
+  generation, matching a repo's existing convention
+
+**Owner/project-specific** (nested — only OpenCode's recursive skill
+discovery sees these; see `writing-skills` for why):
+
+- [`genji1024/`](./skills/genji1024/) — skills for genji1024-owned repos
+  (`github-autonomous-engineer`, shared `build-and-verify`/`pr-workflow`/
+  `merge-conflict-resolution`, and `private-note/`'s own app-specific skills)
+- [`cpp-coursework/`](./skills/cpp-coursework/) — skills for a specific
+  C++/GitLab course project (`doc-writing`, `mr-review`)
+
+**Read [`writing-skills`](./skills/writing-skills/SKILL.md) before adding anything here.**
