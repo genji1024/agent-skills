@@ -14,10 +14,11 @@ description: Rule to reference commit history and match format when generating c
 ## 1. FORMATTING CONSTRAINTS (Apply to ALL commit messages)
 Regardless of how this skill is triggered, the following formatting rules strictly apply:
 - *Format Matching:* Must match the project's historical convention (either Gitmoji `<emoji> <description>` OR Conventional Commits `<type>(scope): <description>`).
-- *Line Length:* Every line MUST be 72 characters or less. Wrap long bullet points to the next line.
+- *Line Length:* Every line MUST be 72 characters or less.
+- *Bullet Length:* Each bullet point MUST fit entirely on a single line — never wrap a bullet onto a second line. If a point does not fit within 72 characters, shorten the wording rather than wrapping it.
 - *Structure:*
     - *Headline (First Line):* Max ~50 characters. Semantic description of what changed and why.
-    - *Body:* Separated by a blank line. Formatted as bullet points (`-`). Must use capped top-level bullets and thorough sub-bullets.
+    - *Body:* Separated by a blank line. Formatted as bullet points (`-`), one line each. Must use capped top-level bullets and thorough sub-bullets.
 - *Content (Semantic over Literal):* Describe the "why" and "what" in plain English. DO NOT just quote code changes. Avoid referencing specific code values, command flags, or identifiers unless strictly necessary. Use backticks sparingly.
 - *Syntax:* Use Markdown style, NOT HTML.
 
