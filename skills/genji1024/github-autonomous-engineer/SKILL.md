@@ -31,6 +31,7 @@ description: genji1024/private-note と genji1024/private-opencode-server で、
   - `get_reviews(pullNumber)` — レビュー全体のサマリ（コメント本文 + APPROVE/CHANGES_REQUESTED 状態）を返す
   - `get_comments(pullNumber)` — PR の通常コメント（Issueスタイルのコメント）を返す
   - レビュー内容を確認するときは、**3つのメソッドすべて**を呼び出して確認すること
+- **エージェント権限は `opencode.json` を参照**: 各サブエージェント（implementer / verifier / committer / pusher / vcs-mcp）の許可・拒否は `~/.config/opencode/opencode.jsonc` の `agent` 定義に従う。権限まわりで認識に齟齬があった場合は同ファイルを参照すること。特に committer は git add/commit/status/diff/log のみ許可され push は不可、GitHub/GitLab MCP は vcs-mcp のみが利用できる、という役割分担になっている。
 
 ## Workflow
 
