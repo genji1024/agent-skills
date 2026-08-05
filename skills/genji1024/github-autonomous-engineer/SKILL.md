@@ -94,6 +94,8 @@ description: genji1024/private-note と genji1024/private-opencode-server で、
 3. **テスト必須**: コード変更後、コミット前に必ずローカルで動作確認を行う
    - `opencode` CLI のサブコマンド・フラグが実際に存在するか事前に `--help` で確認する
    - 依存する CLI の仕様を仮定せず、実際にコマンドを実行して exit code や出力を検証する
+   - **Docker 動作確認も必須**: 対象プロジェクトに Dockerfile がある場合、または Docker でのデプロイが想定される場合は、Docker MCP サーバー（mcp-docker）を使って **イメージビルド → コンテナ起動 → HTTP 応答確認** までを必ず実施する
+   - Docker 動作確認の結果（ビルドの成否・コンテナ起動・HTTP 応答の有無）は PR コメントに必ず報告する
    - テストできない環境の場合は、その理由を明確にコミットメッセージや PR コメントに記載する
 4. **その他**: タスクの性質に応じて適切に実行
 
@@ -109,6 +111,10 @@ description: genji1024/private-note と genji1024/private-opencode-server で、
 
 ### 変更ファイル
 - `path/to/file` — 変更内容の1行サマリ
+
+### 動作確認
+- [ ] lint / format:check / typecheck / build — すべて成功
+- [ ] Docker 動作確認 — イメージビルド → コンテナ起動 → HTTP 応答（Dockerfile がある場合）
 
 ### 関連
 - Closes #N / Related to #N

@@ -39,6 +39,17 @@ npm run typecheck     # tsc --noEmit
 
 CI のステータスも必ず確認する — `pull_request_read(method="get_check_runs")` を使用。
 
+## Docker 動作確認
+
+対象プロジェクトに Dockerfile / docker-compose.yml がある場合（private-note, private-opencode-server ともにある）は、
+コード変更後、**Docker での動作確認も必須**:
+
+1. イメージビルド（`docker build` / `docker compose build`）
+2. コンテナ起動（`docker compose up -d`）
+3. HTTP 応答確認（`curl` 等で 200 応答を確認）
+
+Docker MCP サーバー（mcp-docker）のツールを使用する。結果は PR コメントに報告する。
+
 ## リポジトリ固有の E2E 手順
 
 Next.js のビルド・lint・typecheck は genji1024 配下のリポジトリで共通だが、実際の

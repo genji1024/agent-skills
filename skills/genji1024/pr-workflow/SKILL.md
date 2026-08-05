@@ -22,6 +22,7 @@ description: genji1024 配下のリポジトリ（private-note, private-opencode
 - format:check 結果（`npm run format:check`）
 - typecheck 結果（`npm run typecheck`）
 - build 結果（`npm run build`）
+- Docker 動作確認結果（対象プロジェクトに Dockerfile がある場合）
 
 ## レビューコメントの処理
 
@@ -51,6 +52,10 @@ npm run build
 ```
 
 ビルドが通るだけでは不十分。lint・フォーマット・型チェックのすべてが通って初めて「動作確認完了」と見なす。
+
+対象プロジェクトに Dockerfile がある場合（private-note / private-opencode-server ともにある）は、
+**Docker 動作確認も必須**: Docker MCP サーバー（mcp-docker）で イメージビルド → コンテナ起動 → HTTP 応答確認
+までを実施し、結果をレビュー依頼コメントに含めること。
 
 ## CI チェック
 
