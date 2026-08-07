@@ -97,6 +97,8 @@ description: genji1024/private-note と genji1024/private-opencode-server で、
    - **Docker 動作確認も必須**: 対象プロジェクトに Dockerfile がある場合、または Docker でのデプロイが想定される場合は、Docker MCP サーバー（mcp-docker）を使って **イメージビルド → コンテナ起動 → HTTP 応答確認** までを必ず実施する
    - Docker 動作確認の結果（ビルドの成否・コンテナ起動・HTTP 応答の有無）は PR コメントに必ず報告する
    - テストできない環境の場合は、その理由を明確にコミットメッセージや PR コメントに記載する
+   - Web アプリ + リバースプロキシ構成の変更では、単一コンテナ起動のHTTP確認ではなく **2コンテナ連携（Nginx + アプリ等）のデプロイ環境近似検証**を実施すること。詳細手順は [build-and-verify](../build-and-verify/SKILL.md) の「Docker 動作確認」セクションを参照
+   - docker-mcp の利用可能ツール一覧・注意点（イメージ削除不可など）も [build-and-verify](../build-and-verify/SKILL.md) を参照
 4. **その他**: タスクの性質に応じて適切に実行
 
 ### Step 4: 結果報告（必須）
