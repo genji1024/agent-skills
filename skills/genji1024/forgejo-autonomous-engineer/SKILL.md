@@ -1,0 +1,63 @@
+---
+name: forgejo-autonomous-engineer
+description: autonomous-engineer（基底スキル）のForgejoインスタンス。self-hosted ForgejoインスタンスのIssue/PRを自律的に巡回し、タスクを判断・実行し、結果をコメントで報告する。自分のユーザ名・担当リポジトリ・レビュー依頼先はハードコードせず、forgejo-mcpで動的に解決する。ユーザへの質問は一切行わず、Forgejo上で完結させる。
+---
+
+# Forgejo Autonomous Engineer Skill
+
+[autonomous-engineer](../autonomous-engineer/SKILL.md) の Forgejo インスタンス。共通のワークフロー・判断基準・Skill Update Rulesは基底スキルを参照。ここでは Forgejo 固有の Platform Binding とツールの使い分け・既知の制約のみを定義する。
+
+対象MCPサーバーは `forgejo-mcp`（`@ric_/forgejo-mcp` のHTTPモード。self-hosted Forgejo/Gitea互換API向け）。ツールはMCP上で `forgejo_` プレフィックス付きで呼び出す。
+
+## Platform Binding
+
+| 項目 | forgejo-mcp での実現方法 |
+| --- | --- |
+| 自分のアカウント情報取得 | `get_authenticated_user` |
+| Issue一覧・詳細 | `list_issues` / `get_issue` |
+| Issueコメント一覧・投稿 | `list_issue_comments` / `create_issue_comment` |
+| PR一覧・詳細・差分 | `list_pull_requests` / `get_pull_request` / `get_pr_diff` |
+| PRコミット・変更ファイル一覧 | `list_pr_commits` / `list_pr_files` |
+| PRレビュー | `list_pr_reviews` / `create_pr_review` |
+| 再レビュー依頼 | `request_pr_review` |
+| PR更新（本文/ブランチ更新等） | `edit_pull_request` / `update_pr_branch` |
+| ファイル編集手段（`edit`ツール不可時） | `get_file_contents` で取得 → ローカルに一時保存 → `update_file` で更新 |
+| 担当リポジトリの列挙 | ローカル `git remote -v` を優先。フルスキャンが必要な場合は `list_user_repos`（自分が所有/コラボレータのリポジトリ）または `list_org_repos`（組織配下）で解決する |
+| レビュー依頼先候補の列挙 | `list_collaborators` で自分以外の人間を取得する |
+
+## 既知の制約（2026-08 実測で確認済み）
+
+`forgejo-mcp` はコミュニティ製で、GitHub MCPほど機能が枯れていない。以下は実行時に実測して確認した挙動。齟齬に気づいたら基底スキルの [Skill Update Rules](../autonomous-engineer/SKILL.md) に従ってこのセクションを更新する。
+
+- **インラインレビューコメント専用ツールは存在しない**: `get_review_comments` 相当はない。`list_pr_reviews` はレビュー単位に `comments_count` を返すのみで、インラインコメント本文は含まない。PR は Forgejo/Gitea 内部では issue として扱われるため、通常コメントは `list_issue_comments` で取得できる — レビュー指摘を見逃さないよう**両方を必ず確認**すること。
+- **CI/チェック状態を取得するツールは存在しない**: `get_commit_status` / `list_commit_statuses` / `list_actions_runs` 等は「unavailable tool」で拒否される（admin スコープの action runner 系ツールのみ存在）。CI 状態は取得できないため、ローカルの lint/format/typecheck/build/test + Docker 検証結果のみで判断し、その旨を PR コメントに明記すること（隠蔽しない）。
+- **`mergeable_state` / `has_conflicts` は存在しない**: `get_pull_request` が返すのは `mergeable`(bool) のみ。コンフリクト確認はローカルで `git merge --no-commit --no-ff` 相当の確認で代替する。
+- **`list_user_repos` は `username` 引数が必須**: 引数なしだとバリデーションエラーになる。
+- **`list_org_repos` は org が実在しないと 404**: 個人ユーザ（組織でない）名を渡すと 404 (GetOrgByName) になる。組織かどうかは `forgejo_list_orgs` で判定できる。
+- **PR作成時の `reviewers` 引数は非コラボレータ（オーナー含む）を黙殺する**: オーナーをレビュアーにするには `forgejo_create_pull_request` の reviewers では効かず、`forgejo_request_pr_review` を別途呼ぶと成功する。
+- **ラベルはリポジトリに存在しない場合がある**: `enhancement` 等を付与する前にラベルを新規作成してから PR に付与する。
+- **`list_issues` は PR と Issue を同一ストリームで返す**: オープン一覧に PR が混在するため、Issue 巡回時は PR を除外するフィルタが必要。PR 番号と Issue 番号が衝突しうるので、コメント取得時にどちらを指すか注意。
+- **`list_collaborators` はオーナーを返さない**: 個人リポジトリではオーナーが collaborators に含まれない（コラボレータの bot のみ返る）。レビュー依頼先の列挙は `requested_reviewers` やオーナー情報を併用する。
+- **`list_collaborators` のレスポンスに permission フィールドが無い**: 権限レベルは API で報告されない。
+- **`list_pr_reviews` に `REQUEST_REVIEW` 状態のレコードが混在する**: 再レビュー依頼イベントもレビューとして返る。レビュー判定時は `state` を必ず確認する（`REQUEST_REVIEW` は人間のレビューではない）。
+- **force-push 後もレビューの `stale` フラグは自動更新されない**: head コミットが変わっても `stale:false` のまま残る。「stale:false」を「現 head 対象の有効な指摘」と安易に解釈しない。
+- **ランナー・Secrets 系ツールは存在するが bot トークンでは 403**: `forgejo_list_action_runners_jobs` / `forgejo_get_runner_registration_token` は「unavailable tool」ではなく admin スコープ不足（`required scope: read:admin`）で 403。CI 状態・ランナー・Secrets はいずれも bot では不可視（上記「CI/チェック状態を取得するツールは存在しない」の精緻化）。
+- **pusher の push 手段は gitpush MCP のみ**: `gitpush_push(repo_path, remote="origin", branch, force)` で、事前設定済みの名前付きリモートへ同名ブランチをそのまま push するだけ。リモート追加・ブランチ作成・refspec・ローカル `git push` は不可。committer の bash 許可は `git add/commit/status/diff/log` のみで、`remote*`/`checkout*`/`branch*`/`reset*`/`rm*`/`rev-list`/`config`/`ls-files`/`grep` は DENIED（実測）。
+- **push 先リモートの検証が必須**: gitpush MCP のデフォルト remote は `origin`。ローカルリポジトリの origin が GitHub の場合、`remote="forgejo"` を明示しない限り push は GitHub に行き Forgejo には反映されない。Forgejo へ push する際は `remote="forgejo"` を明示し、push 後に `forgejo_list_branches` / `forgejo_list_repo_commits` で Forgejo 側のコミット・ブランチを確認してから「Forgejo に push した」と報告すること（過去に「Forgejo へ push」と報告しつつ実際は GitHub origin に push していた事案あり）。リモート追加は coder の `git remote add` で行う。
+- **Forgejo MCP に複数ファイルを1コミットで作る手段は無い**: `forgejo_create_file` は 1ファイル=1コミット（content は base64）。git data API（tree/commit/ref の低レベル作成）やバッチ `create_files` 相当は未提供。
+- **「GitHub→Forgejo の1コミットsquash移行」は coder の git plumbing 経路で実行可能（実証済み）**: 空リポジトリへ `main=空init` + `migrate/from-github=squash` を作るには、**builder→coder に委譲**し、coder の広範な bash 許可（`git remote add` / `git fetch` / `git mktree` / `git hash-object -t commit -w --stdin` / `git update-ref` / `git checkout -B` / `git reset --hard` / `git rev-parse` / `git log`）で plumbing 方式（`git commit` 不使用）によりコミットオブジェクトを直接構築する。その後 integrator→pusher が gitpush MCP で `remote="forgejo"` へ push し、pr-manager が PR を作成する。committer の allowlist（`git add/commit/status/diff/log` のみ）だけを根拠に「実行不可」と判断しないこと（private-opencode-server#1 / agent-skills#1 で実証済み）。コミット数の計測は `git rev-list --count` が DENIED なので `git log --oneline origin/main | wc -l` の行数で代用する。
+- **plumbing でのコミット構築手順（`git commit` 不使用）**: 空ツリーは `git mktree </dev/null`（既知の空ツリー SHA `4b825dc642cb6eb9a060e54bf8d69288fbee4904` でも可）。コミットオブジェクトは `printf 'tree <tree-sha>\nparent <parent-sha>\nauthor <name> <email> <timestamp> +0900\ncommitter <name> <email> <timestamp> +0900\n\n<message>\n' | git hash-object -t commit -w --stdin`（parent 行は空initでは省略）で作成し、`git update-ref refs/heads/<branch> <sha>` でブランチに指す。squash コミットの tree は `git rev-parse origin/main^{tree}` の値を使う。**`git checkout -B <branch>` は開始点を必ず明示**（例: `git checkout -B migrate/from-github <sha>`）。開始点を省略すると、既存ブランチを HEAD にリセットして squash コミットのポインタを上書きしてしまう（実発生したバグ）。
+- **plumbing で構築するコミットの author/committer は自分（bot）の身元を使う**: `<name> <email>` には `forgejo_get_authenticated_user` で動的解決した自分のユーザ名・メール（例: `bot-genji1024 <bot@genji1024.com>`）を指定する。リポジトリオーナーの名前や `git config user.name` のデフォルト（人間の名前）を使わない（実発生: author が `genji1024` になり PR レビューで指摘された）。
+- **plumbing で構築するコミットのメッセージも commit-message スキルに従う**: `git commit` を使わず `printf ... | git hash-object` で直接コミットオブジェクトを作る場合も [commit-message](../../commit-message/SKILL.md) の形式制約を適用する。body の行間は空けない（見出しと本文の間の1行のみ）、トップレベル（抽象）とサブバレット（具体）の階層構造にする（実発生: body の行間に空行が入り、階層的でないと PR レビューで指摘された）。
+
+## Prerequisites
+
+- **ローカルの `git` を優先**: forgejo-mcpの呼び出しは対象インスタンスへのAPIコールになるため、可能な限りローカルの `git` コマンドを使用する。セッション開始時は `git remote -v` で対象のForgejoホスト・owner/repoを確認すること。
+- **エージェント権限は `opencode.jsonc` を参照**: 各サブエージェント（coder / verifier / committer / pusher / pr-manager）の許可・拒否は `~/.config/opencode/opencode.jsonc` 配下の `agents/*.md` の `permission` に従う。committer は git add/commit/status/diff/log のみ許可されpush不可、GitHub/GitLab/Forgejo MCPはissue-reader（Planner配下、コンテキスト収集を担当）とpr-manager（Integrator配下、Issue/PR操作を担当）のみが利用できる、という役割分担になっている。
+
+## Cross-Reference
+
+- [autonomous-engineer](../autonomous-engineer/SKILL.md) — 共通のワークフロー・判断基準・Skill Update Rules（本体）
+- [pr-workflow](../pr-workflow/SKILL.md) — PR作成・レビュー対応・CI検証の詳細ワークフロー（GitHub MCPのメソッド名を前提にした記述が含まれるため、手順の趣旨のみ流用し、具体的なツール呼び出しは上記Platform Bindingに読み替えること）
+- [merge-conflict-resolution](../merge-conflict-resolution/SKILL.md) — マージ後のコンフリクト解決手順（同上、`update_pull_request` 等の呼び出し部分は読み替える）
+- [build-and-verify](../build-and-verify/SKILL.md) — lint/typecheck/build/Docker動作確認の手順（プラットフォーム非依存）
