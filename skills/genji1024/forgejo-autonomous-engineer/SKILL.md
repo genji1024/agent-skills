@@ -61,6 +61,7 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 - **plumbing で構築するコミットの author/committer は自分（bot）の身元を使う**: `<name> <email>` には `forgejo_get_authenticated_user` で動的解決した自分のユーザ名・メール（例: `bot-genji1024 <bot@genji1024.com>`）を指定する。リポジトリオーナーの名前や `git config user.name` のデフォルト（人間の名前）を使わない（実発生: author が `genji1024` になり PR レビューで指摘された）。
 - **plumbing で構築するコミットのメッセージも commit-message スキルに従う**: `git commit` を使わず `printf ... | git hash-object` で直接コミットオブジェクトを作る場合も [commit-message](../../commit-message/SKILL.md) の形式制約を適用する。body の行間は空けない（見出しと本文の間の1行のみ）、トップレベル（抽象）とサブバレット（具体）の階層構造にする（実発生: body の行間に空行が入り、階層的でないと PR レビューで指摘された）。
 - **docker-mcp は利用可能（bash の `docker` CLI は無い）**: 検証環境には bash の `docker` CLI が存在しない（`command not found`）が、**docker-mcp は利用可能**で、`docker_list_images` / `docker_build_docker_image` / `docker_start_container` / `docker_create_network` / `docker_run_test_container` 等で daemon に直接アクセスし、イメージビルド→コンテナ起動→HTTP応答確認まで完遂できる。Docker 動作確認は必ず docker-mcp で実施する。**「実行環境に Docker が無い」と報告する前に docker-mcp の利用可否を必ず確認する**（実発生: docker-mcp が使えるのに「Docker が無いため未実施」と報告し、レビューで指摘された）。docker-mcp に compose ツールは無いため、compose 相当は build / start / network を個別に呼んで再現する。
+- **ブランチ作成前に必ずリモートを fetch して最新化する**: ローカルの `forgejo/main`（等）が古いままブランチを切ると、PR の親コミットが最新 main にならず `mergeable=false` になる（実発生: dotfiles#4 でオーナーに「親コミットが main 最新でない。必ずローカルブランチを全て最新の状態にしてから作業するように」と指摘され、リベース＋force push を強いられた）。ブランチ作成前に `git fetch forgejo main` 等で最新を取得し、`git rev-parse forgejo/main` が最新であることを確認してからブランチを切ること。
 
 ## Prerequisites
 
