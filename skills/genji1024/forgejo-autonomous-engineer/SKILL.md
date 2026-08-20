@@ -9,6 +9,16 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 
 対象MCPサーバーは `forgejo-mcp`（`@ric_/forgejo-mcp` のHTTPモード。self-hosted Forgejo/Gitea互換API向け）。ツールはMCP上で `forgejo_` プレフィックス付きで呼び出す。
 
+## 移行メモ: @ric_ → b4mad（agentic-forges/forgejo-mcp）
+
+対象MCPサーバーは `agentic-forges/forgejo-mcp`（b4mad 版、Go、GPL-3.0-or-later）への移行が進行中です（genji1024/dotfiles#4 で実装・PR 作成済み）。b4mad 版は:
+
+- ツール名が snake_case で `forgejo_` プレフィックス**なし**（例: `get_my_user_info`、`list_workflow_runs`）
+- 認証 env は `FORGEJO_URL` + `FORGEJO_ACCESS_TOKEN`（`FORGEJO_TOKEN` / `FORGEJO_MCP_API_KEY` は読まれない）
+- Actions 系ツール（`list_workflow_runs` 等）を備え、bot トークン（read:admin 無し）で CI 結果を取得可能
+
+本スキルの Platform Binding・既知の制約は現行 `@ric_/forgejo-mcp`（`forgejo_` プレフィックス）前提です。**移行デプロイ後に全面書き換えが必要**です。セッション開始時に `forgejo_get_authenticated_user`（@ric_）と `get_my_user_info`（b4mad）のどちらが利用可能かで、稼働中の MCP を判定してください。
+
 ## Platform Binding
 
 | 項目 | forgejo-mcp での実現方法 |
@@ -50,6 +60,7 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 - **plumbing でのコミット構築手順（`git commit` 不使用）**: 空ツリーは `git mktree </dev/null`（既知の空ツリー SHA `4b825dc642cb6eb9a060e54bf8d69288fbee4904` でも可）。コミットオブジェクトは `printf 'tree <tree-sha>\nparent <parent-sha>\nauthor <name> <email> <timestamp> +0900\ncommitter <name> <email> <timestamp> +0900\n\n<message>\n' | git hash-object -t commit -w --stdin`（parent 行は空initでは省略）で作成し、`git update-ref refs/heads/<branch> <sha>` でブランチに指す。squash コミットの tree は `git rev-parse origin/main^{tree}` の値を使う。**`git checkout -B <branch>` は開始点を必ず明示**（例: `git checkout -B migrate/from-github <sha>`）。開始点を省略すると、既存ブランチを HEAD にリセットして squash コミットのポインタを上書きしてしまう（実発生したバグ）。
 - **plumbing で構築するコミットの author/committer は自分（bot）の身元を使う**: `<name> <email>` には `forgejo_get_authenticated_user` で動的解決した自分のユーザ名・メール（例: `bot-genji1024 <bot@genji1024.com>`）を指定する。リポジトリオーナーの名前や `git config user.name` のデフォルト（人間の名前）を使わない（実発生: author が `genji1024` になり PR レビューで指摘された）。
 - **plumbing で構築するコミットのメッセージも commit-message スキルに従う**: `git commit` を使わず `printf ... | git hash-object` で直接コミットオブジェクトを作る場合も [commit-message](../../commit-message/SKILL.md) の形式制約を適用する。body の行間は空けない（見出しと本文の間の1行のみ）、トップレベル（抽象）とサブバレット（具体）の階層構造にする（実発生: body の行間に空行が入り、階層的でないと PR レビューで指摘された）。
+- **docker-mcp は利用可能（bash の `docker` CLI は無い）**: 検証環境には bash の `docker` CLI が存在しない（`command not found`）が、**docker-mcp は利用可能**で、`docker_list_images` / `docker_build_docker_image` / `docker_start_container` / `docker_create_network` / `docker_run_test_container` 等で daemon に直接アクセスし、イメージビルド→コンテナ起動→HTTP応答確認まで完遂できる。Docker 動作確認は必ず docker-mcp で実施する。**「実行環境に Docker が無い」と報告する前に docker-mcp の利用可否を必ず確認する**（実発生: docker-mcp が使えるのに「Docker が無いため未実施」と報告し、レビューで指摘された）。docker-mcp に compose ツールは無いため、compose 相当は build / start / network を個別に呼んで再現する。
 
 ## Prerequisites
 
