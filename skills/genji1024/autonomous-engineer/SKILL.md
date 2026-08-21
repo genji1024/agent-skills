@@ -114,6 +114,7 @@ Step 0 で決まった担当リポジトリごとに、必ず以下を取得す�
    - CLIのサブコマンド・フラグが実際に存在するか事前に `--help` 等で確認する
    - 依存するCLIの仕様を仮定せず、実際にコマンドを実行してexit codeや出力を検証する
    - **Docker動作確認も必須**: 対象プロジェクトにDockerfileがある場合、またはDockerでのデプロイが想定される場合は、Docker MCPサーバーを使って**イメージビルド → コンテナ起動 → HTTP応答確認**までを必ず実施する
+   - **healthcheck 定義がある場合は healthy 到達まで確認**: 対象コンテナに healthcheck が定義されている場合（Dockerfile の `HEALTHCHECK` や compose の `healthcheck`）、起動＋HTTP応答だけでなく **docker inspect で `State.Health.Status == healthy` / `FailingStreak == 0` になることまで確認する**。curl ベースの healthcheck は、SSE / ストリーミング HTTP エンドポイント（例: MCP の `/mcp`）へ GET すると 200 を返しつつ応答が終端せず、curl がハングしてタイムアウト → サーバが正常でも unhealthy になることがある（実発生）。healthcheck の動作確認結果は PR コメントに明記する。
    - Docker動作確認の結果はPRコメントに必ず報告する
    - テストできない環境の場合は、その理由を明確にコミットメッセージやPRコメントに記載する
    - **サブエージェント成果物のクロスチェック**: サブエージェント（coder や verifier）にコード変更や検証を委譲した場合、orchestrator（自分）はサブエージェントの成果物を必ず再検証すること
@@ -130,6 +131,7 @@ Step 0 で決まった担当リポジトリごとに、必ず以下を取得す�
 
 - [ ] コード変更が lint / typecheck / build を通過したか
 - [ ] Dockerfileがある場合、Docker MCPでイメージビルド → コンテナ起動 → HTTP応答確認を実施したか
+- [ ] コンテナに healthcheck 定義がある場合、docker inspect で Health.Status=healthy（FailingStreak 0）まで確認したか
 - [ ] Webアプリ + リバースプロキシ構成の場合、2コンテナ連携検証をしたか
 - [ ] サブエージェント（coder / verifier）に委譲した成果物をorchestratorが再検証し、検証結果をPRコメントに正確に反映したか
 - [ ] 動作確認がスキップされた場合、理由を明示し隠蔽していないか
