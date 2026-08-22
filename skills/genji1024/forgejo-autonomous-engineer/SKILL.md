@@ -70,6 +70,9 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 - **Forgejo act ランナーは step 境界でバックグラウンドプロセスを後始末する（2026-08 実測）**: GitHub Actions 前提の「起動 step と検証 step を分離」するワークフローは Forgejo では動かない。起動 step で `&` 起動したプロセスが次 step 開始直後に消滅する（`Initial HTTP status: 000`）。起動〜検証は同一 step に統合すること。またランナーイメージ `node:20-bookworm` には **docker CLI が無い**ため `docker compose` 系 step は常に失敗する。Docker 検証は CI に載せず docker-mcp でローカル実施するのが確実（private-opencode-server#4 で実測）。
 - **CI 失敗を「テスト・ジョブ削除」で回避してはならない（2026-08 レビュー指摘）**: Forgejo act ランナーの環境要因（例: ランナーイメージ `node:20-bookworm` に docker CLI が無い）で CI ジョブが失敗しても、失敗ジョブ・テストを**削除して CI を緑にするのは「テスト削除による回避」であり禁止**（private-opencode-server#4 でレビュー指摘）。手順: (1) 失敗の根本原因を調査し (2) テスト・ジョブの削除・変更が必要な場合は**実施前にレビュアー判断を仰ぎ** (3) 環境要因が原因なら環境を提供する側（例: genji1024/forgejo-server のランナー設定）にイシューを立てて根本解決する。既存の docker 系 CI ジョブを勝手に削除しないこと。
 - **ブランチ作成前に必ずリモートを fetch して最新化する**: ローカルの `forgejo/main`（等）が古いままブランチを切ると、PR の親コミットが最新 main にならず `mergeable=false` になる（実発生: dotfiles#4 でオーナーに「親コミットが main 最新でない。必ずローカルブランチを全て最新の状態にしてから作業するように」と指摘され、リベース＋force push を強いられた）。ブランチ作成前に `git fetch forgejo main` 等で最新を取得し、`git rev-parse forgejo/main` が最新であることを確認してからブランチを切ること。
+- **@ric_ 版サーバーでは `forgejo_list_pull_review_comments` が MCP エラーで失敗しうる（2026-08-22 実測）**: 本サーバー（@ric_ 版 2.34.0）では `forgejo_list_pull_review_comments` が全 PR で `-32603: GetReviewByID` のサーバー側エラーになり、インラインコメント本文を取得できない。`list_pull_reviews` の `comments_count: 0` を根拠に「インラインコメントなし」と断定せず、通常コメント（`list_issue_comments`）とレビュー（`list_pull_reviews`）で指摘を見落とさないこと。
+- **PR 詳細は `forgejo_get_pull_request` ではなく `forgejo_get_pull_request_by_index`（@ric_ 版）**: `forgejo_get_pull_request` は存在しない（MCP 2.34.0 実測）。
+- **@ric_ 版では `forgejo_list_user_repos` / `forgejo_list_org_repos` / `forgejo_list_collaborators` / `forgejo_get_user` / `forgejo_list_repo_labels` が存在しない**: 自分のリポジトリ一覧は `forgejo_list_my_repos`、組織判定は `forgejo_list_orgs` / `forgejo_list_user_orgs` を使う（2026-08-22 実測）。
 
 ## Prerequisites
 
