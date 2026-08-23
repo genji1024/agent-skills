@@ -26,6 +26,35 @@ Regardless of how this skill is triggered, the following formatting rules strict
 - *Syntax:* Use Markdown style, NOT HTML.
 - *Language:* English by default. Write the commit message in English unless the repository's own commit history is consistently written in another language. The language of the issue, PR, or request does not matter — keep the commit message in English.
 
+### Normative Example — BOTH subject AND body must conform
+The format below is normative (must-follow). Every commit message must satisfy ALL of the following at once:
+
+- *Subject (first line):* ≤50 chars, Conventional Commits/Gitmoji format, no leading/trailing whitespace.
+- *Body:* separated by one blank line. Bulleted with `- `. Must have a hierarchy: an abstract **top-level bullet** (the "why") followed by 2-space-indented **sub-bullets** (the concrete "what").
+
+Compliant example:
+
+```
+feat(auth): add remember-me token rotation
+
+- Add token rotation to harden session security
+  - rotate refresh token on each use
+  - revoke old tokens immediately
+  - add expiry to rotated tokens
+```
+
+Here the top-level bullet `- Add token rotation to harden session security` states the abstract purpose/why, and the 2-space-indented sub-bullets beneath it list the concrete what.
+
+**INVALID (violates the rule)**: a flat, unindented list of literal file operations with no abstract top-level bullet and no hierarchy, e.g.:
+
+```
+- change file A
+- change file B
+- change file C
+```
+
+Every bullet must lead with an abstract top-level bullet explaining the "why" and nest the concrete "what" changes beneath it as 2-space-indented sub-bullets. A flat literal file-operation list is non-compliant.
+
 ---
 
 ## 2. WORKFLOW A: Slash Command (`/commit-message`)
