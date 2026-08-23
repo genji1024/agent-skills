@@ -42,7 +42,7 @@ description: genji1024 配下のリポジトリ（private-note, private-opencode
 
 ## ローカル検証（プッシュ前に必ず実行）
 
-コード変更後、プッシュ前に以下の4ステップを**すべて**ローカルで実行すること:
+コード変更後、プッシュ前に以下の5ステップを**すべて**ローカルで実行すること:
 
 ```bash
 npm run lint --max-warnings 0
@@ -52,6 +52,11 @@ npm run build
 ```
 
 ビルドが通るだけでは不十分。lint・フォーマット・型チェックのすべてが通って初めて「動作確認完了」と見なす。
+
+5. コミットメッセージ検証: プッシュ前に、対象コミットのメッセージを `git log -1 --format=%B`（または該当コミットのメッセージ）で確認する
+   - 検証内容: すべての行が72文字以下、見出し（1行目）は約50文字以内、リポジトリの規約（Conventional Commits / Gitmoji）に準拠していること
+   - 違反があれば `git commit --amend` でメッセージを修正してからプッシュする
+   - コード変更を伴わないコミット（メッセージ修正のみのコミット）にも適用する
 
 対象プロジェクトに Dockerfile がある場合（private-note / private-opencode-server ともにある）は、
 **Docker 動作確認も必須**: Docker MCP サーバー（mcp-docker）で イメージビルド → コンテナ起動 → HTTP 応答確認
