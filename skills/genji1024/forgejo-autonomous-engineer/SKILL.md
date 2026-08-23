@@ -72,7 +72,7 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 - **ブランチ作成前に必ずリモートを fetch して最新化する**: ローカルの `forgejo/main`（等）が古いままブランチを切ると、PR の親コミットが最新 main にならず `mergeable=false` になる（実発生: dotfiles#4 でオーナーに「親コミットが main 最新でない。必ずローカルブランチを全て最新の状態にしてから作業するように」と指摘され、リベース＋force push を強いられた）。ブランチ作成前に `git fetch forgejo main` 等で最新を取得し、`git rev-parse forgejo/main` が最新であることを確認してからブランチを切ること。
 - **@ric_ 版サーバーでは `forgejo_list_pull_review_comments` が MCP エラーで失敗しうる（2026-08-22 実測）**: 本サーバー（@ric_ 版 2.34.0）では `forgejo_list_pull_review_comments` が全 PR で `-32603: GetReviewByID` のサーバー側エラーになり、インラインコメント本文を取得できない。`list_pull_reviews` の `comments_count: 0` を根拠に「インラインコメントなし」と断定せず、通常コメント（`list_issue_comments`）とレビュー（`list_pull_reviews`）で指摘を見落とさないこと。
 - **PR 詳細は `forgejo_get_pull_request` ではなく `forgejo_get_pull_request_by_index`（@ric_ 版）**: `forgejo_get_pull_request` は存在しない（MCP 2.34.0 実測）。
-- **@ric_ 版では `forgejo_list_user_repos` / `forgejo_list_org_repos` / `forgejo_list_collaborators` / `forgejo_get_user` / `forgejo_list_repo_labels` が存在しない**: 自分のリポジトリ一覧は `forgejo_list_my_repos`、組織判定は `forgejo_list_orgs` / `forgejo_list_user_orgs` を使う（2026-08-22 実測）。
+- **@ric_ 版では `forgejo_list_user_repos` / `forgejo_list_org_repos` / `forgejo_list_collaborators` / `forgejo_get_user` / `forgejo_list_repo_labels` / `forgejo_list_orgs` が存在しない**: 自分のリポジトリ一覧は `forgejo_list_my_repos`、組織判定は `forgejo_list_my_orgs` を使う（2026-08-23 実測で `forgejo_list_orgs` が存在せず `forgejo_list_my_orgs` が利用可と確認）。
 
 ## Prerequisites
 
