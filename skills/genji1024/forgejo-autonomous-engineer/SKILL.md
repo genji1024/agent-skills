@@ -30,7 +30,7 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 | PR一覧・詳細・差分 | `list_repo_pull_requests`（空リポジトリでは 404 `The target couldn't be found`）/ `get_pull_request` / `get_pull_request_diff` |
 | PRコミット・変更ファイル一覧 | `list_pr_commits` / `list_pull_request_files` |
 | PRレビュー | `list_pull_reviews` / `create_pr_review` |
-| 再レビュー依頼 | `create_review_requests`（`request_pr_review` は存在しない。この実ツールでオーナーへの再依頼が成功する） |
+| 再レビュー依頼 | `create_review_requests`（`request_pr_review` は存在しない。この実ツールでオーナーへの再依頼が成功する。ただし PR 投稿者自身はレビューアに指定不可） |
 | PR更新（本文/ブランチ更新等） | `update_pull_request`（assignee/ラベル更新に使用）/ `update_pr_branch` |
 | ファイル編集手段（`edit`ツール不可時） | `get_file_contents` で取得 → ローカルに一時保存 → `update_file` で更新 |
 | 担当リポジトリの列挙 | ローカル `git remote -v` を優先。フルスキャンが必要な場合は `list_user_repos`（自分が所有/コラボレータのリポジトリ）または `list_org_repos`（組織配下）で解決する |
@@ -46,6 +46,7 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 - **`list_user_repos` は `username` 引数が必須**: 引数なしだとバリデーションエラーになる。
 - **`list_org_repos` は org が実在しないと 404**: 個人ユーザ（組織でない）名を渡すと 404 (GetOrgByName) になる。組織かどうかは `forgejo_list_my_orgs` で判定できる。
 - **PR作成時の `reviewers` 引数は非コラボレータ（オーナー含む）を黙殺する**: オーナーをレビュアーにするには `forgejo_create_pull_request` の reviewers では効かず、`forgejo_create_review_requests`（`request_pr_review` は存在しない）を別途呼ぶと成功する。
+- **`create_review_requests` は PR 投稿者（poster）をレビューアに指定できない（2026-08-23 実測）**: オーナーが PR の投稿者である場合、`forgejo_create_review_requests` でオーナーを reviewer に指定すると `MCP error -32603: create review requests err: poster of pr can't be reviewer [user_id: 2, repo_id: 8]` で失敗する（決定論的なサーバー側バリデーション拒否）。PR 投稿者への再レビュー依頼は API では不可能。この場合は通常コメント（`create_issue_comment`）で「ご確認お願いします」と伝える（コメント投稿で依頼は伝達される）。Platform Binding「再レビュー依頼」の「オーナーへの再依頼が成功する」は、オーナーが PR 投稿者でない場合に限る。
 - **ラベルはリポジトリに存在しない場合がある**: `enhancement` 等を付与する前にラベルを新規作成してから PR に付与する。
 - **`list_repo_issues` は PR と Issue を同一ストリームで返す**: `type=issues` を指定しないとオープン一覧に PR が混在するため、Issue 巡回時は PR を除外するフィルタが必要。PR 番号と Issue 番号が衝突しうるので、コメント取得時にどちらを指すか注意。
 - **`list_collaborators` は存在しない**: コラボレータ列挙ツールは提供されていない。レビュー依頼先の列挙は `requested_reviewers` やオーナー情報・会話コンテキストを併用する。
