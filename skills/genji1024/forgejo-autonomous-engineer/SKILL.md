@@ -44,7 +44,7 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 - **CI 状態は `forgejo_list_workflow_runs` で取得できる（2026-08 実測）**: 以前は「CI/チェック状態を取得するツールは存在しない」と記載していたが、`forgejo_list_workflow_runs` は実在し、run 一覧と pass/fail を取得できる。ただしジョブ詳細・ログは 404（resource does not exist）になり、run の表示番号は `run_id` と異なる。CI 失敗の原因究明はローカルの lint/format/typecheck/build/test + Docker 検証による**ローカル再現で代替**し、その旨を PR コメントに明記すること（隠蔽しない）。MCP のジョブ詳細・ログ取得系ツールは 404 になるが、**Forgejo の REST API を直接（`curl` + トークン）呼ぶことで run ログを取得できる**（private-opencode-server#4 で実測し、CI 失敗の原因特定に使用した）。MCP 経由で 404 でも「CI 結果を確認できない」と断定せず、REST API 直叩きを試すこと。ランナー・Secrets 系 API は `read:admin` スコープ必須で bot トークンでは 403。
 - **`mergeable_state` / `has_conflicts` は存在しない**: `get_pull_request` が返すのは `mergeable`(bool) のみ。コンフリクト確認はローカルで `git merge --no-commit --no-ff` 相当の確認で代替する。
 - **`list_user_repos` は `username` 引数が必須**: 引数なしだとバリデーションエラーになる。
-- **`list_org_repos` は org が実在しないと 404**: 個人ユーザ（組織でない）名を渡すと 404 (GetOrgByName) になる。組織かどうかは `forgejo_list_orgs` で判定できる。
+- **`list_org_repos` は org が実在しないと 404**: 個人ユーザ（組織でない）名を渡すと 404 (GetOrgByName) になる。組織かどうかは `forgejo_list_my_orgs` で判定できる。
 - **PR作成時の `reviewers` 引数は非コラボレータ（オーナー含む）を黙殺する**: オーナーをレビュアーにするには `forgejo_create_pull_request` の reviewers では効かず、`forgejo_create_review_requests`（`request_pr_review` は存在しない）を別途呼ぶと成功する。
 - **ラベルはリポジトリに存在しない場合がある**: `enhancement` 等を付与する前にラベルを新規作成してから PR に付与する。
 - **`list_repo_issues` は PR と Issue を同一ストリームで返す**: `type=issues` を指定しないとオープン一覧に PR が混在するため、Issue 巡回時は PR を除外するフィルタが必要。PR 番号と Issue 番号が衝突しうるので、コメント取得時にどちらを指すか注意。
