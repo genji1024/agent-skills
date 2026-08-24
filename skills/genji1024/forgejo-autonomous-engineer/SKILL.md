@@ -29,7 +29,7 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 | Issueコメント一覧・投稿 | `list_issue_comments` / `create_issue_comment` |
 | PR一覧・詳細・差分 | `list_repo_pull_requests`（空リポジトリでは 404 `The target couldn't be found`）/ `get_pull_request` / `get_pull_request_diff` |
 | PRコミット・変更ファイル一覧 | `list_pr_commits` / `list_pull_request_files` |
-| PRレビュー | `list_pull_reviews` / `create_pr_review` |
+| PRレビュー | `list_pull_reviews` / `create_pull_review`（`create_pull_review` の `state` に `APPROVED`/`REQUEST_CHANGES`/`COMMENT` を渡すことでレビューを投稿・承認できる） |
 | 再レビュー依頼 | `create_review_requests`（`request_pr_review` は存在しない。この実ツールでオーナーへの再依頼が成功する。ただし PR 投稿者自身はレビューアに指定不可） |
 | PR更新（本文/ブランチ更新等） | `update_pull_request`（assignee/ラベル更新に使用）/ `update_pr_branch` |
 | ファイル編集手段（`edit`ツール不可時） | `get_file_contents` で取得 → ローカルに一時保存 → `update_file` で更新 |
@@ -41,6 +41,7 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 `forgejo-mcp` はコミュニティ製で、GitHub MCPほど機能が枯れていない。以下は実行時に実測して確認した挙動。齟齬に気づいたら基底スキルの [Skill Update Rules](../autonomous-engineer/SKILL.md) に従ってこのセクションを更新する。
 
 - **インラインコメントは `forgejo_list_pull_review_comments` で取得できる（2026-08 実測）**: 以前は「専用ツールは存在しない」と記載していたが、`forgejo_list_pull_review_comments` は実在する。ただし `list_pull_reviews` はレビュー単位に `comments_count` を返すのみで、インラインコメント本文は含まない。PR は Forgejo/Gitea 内部では issue として扱われるため、通常コメントは `list_issue_comments`、レビューは `list_pull_reviews`、インラインコメントは `list_pull_review_comments` を**組み合わせて**確認し、レビュー指摘を見逃さないこと。
+- **レビュー承認時はコメントだけでなく必ず Approve を投稿する（2026-08-25 レビュー指摘）**: レビュー依頼を受けた PR を確認し「問題なし」と通常コメント（`create_issue_comment`）するだけでは足りず、`forgejo_create_pull_review` で `state="APPROVED"` のレビューを明示的に投稿する必要がある（forgejo-server#4 で「レビュアーは承認時に必ず Approve してください。Approval がないとマージできない場合がある」と指摘された）。Approval はプロジェクトのマージ可否条件（branch protection 等）に関わるため、レビュー承認時は必ず `forgejo_create_pull_review(state="APPROVED")` を呼ぶ。通常コメントだけでは承認とみなされない。
 - **CI 状態は `forgejo_list_workflow_runs` で取得できる（2026-08 実測）**: 以前は「CI/チェック状態を取得するツールは存在しない」と記載していたが、`forgejo_list_workflow_runs` は実在し、run 一覧と pass/fail を取得できる。ただしジョブ詳細・ログは 404（resource does not exist）になり、run の表示番号は `run_id` と異なる。CI 失敗の原因究明はローカルの lint/format/typecheck/build/test + Docker 検証による**ローカル再現で代替**し、その旨を PR コメントに明記すること（隠蔽しない）。MCP のジョブ詳細・ログ取得系ツールは 404 になるが、**Forgejo の REST API を直接（`curl` + トークン）呼ぶことで run ログを取得できる**（private-opencode-server#4 で実測し、CI 失敗の原因特定に使用した）。MCP 経由で 404 でも「CI 結果を確認できない」と断定せず、REST API 直叩きを試すこと。ランナー・Secrets 系 API は `read:admin` スコープ必須で bot トークンでは 403。
 - **`mergeable_state` / `has_conflicts` は存在しない**: `get_pull_request` が返すのは `mergeable`(bool) のみ。コンフリクト確認はローカルで `git merge --no-commit --no-ff` 相当の確認で代替する。
 - **`list_user_repos` は `username` 引数が必須**: 引数なしだとバリデーションエラーになる。
