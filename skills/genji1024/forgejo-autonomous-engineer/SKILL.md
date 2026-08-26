@@ -48,7 +48,7 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 - **`list_org_repos` は org が実在しないと 404**: 個人ユーザ（組織でない）名を渡すと 404 (GetOrgByName) になる。組織かどうかは `forgejo_list_my_orgs` で判定できる。
 - **PR作成時の `reviewers` 引数は非コラボレータ（オーナー含む）を黙殺する**: オーナーをレビュアーにするには `forgejo_create_pull_request` の reviewers では効かず、`forgejo_create_review_requests`（`request_pr_review` は存在しない）を別途呼ぶと成功する。
 - **`create_review_requests` は PR 投稿者（poster）をレビューアに指定できない（2026-08-23 実測）**: オーナーが PR の投稿者である場合、`forgejo_create_review_requests` でオーナーを reviewer に指定すると `MCP error -32603: create review requests err: poster of pr can't be reviewer [user_id: 2, repo_id: 8]` で失敗する（決定論的なサーバー側バリデーション拒否）。PR 投稿者への再レビュー依頼は API では不可能。この場合は通常コメント（`create_issue_comment`）で「ご確認お願いします」と伝える（コメント投稿で依頼は伝達される）。Platform Binding「再レビュー依頼」の「オーナーへの再依頼が成功する」は、オーナーが PR 投稿者でない場合に限る。
-- **ラベルはリポジトリに存在しない場合がある**: `enhancement` 等を付与する前にラベルを新規作成してから PR に付与する。
+- **ラベルはリポジトリに存在しない場合がある**: `enhancement` 等を付与する前に `forgejo_create_repo_label` でラベルを新規作成してから `forgejo_add_issue_labels` で PR に付与する。`forgejo_add_issue_labels` はラベル**名前（文字列）ではなく数値ID** を渡す必要がある（ラベル名を渡すと `invalid label ID 'enhancement' … labels must be numeric IDs` エラーになる。2026-08-26 実測）。ラベルの数値ID は `forgejo_list_repo_labels` で取得できる。
 - **`list_repo_issues` は PR と Issue を同一ストリームで返す**: `type=issues` を指定しないとオープン一覧に PR が混在するため、Issue 巡回時は PR を除外するフィルタが必要。PR 番号と Issue 番号が衝突しうるので、コメント取得時にどちらを指すか注意。
 - **`list_collaborators` は存在しない**: コラボレータ列挙ツールは提供されていない。レビュー依頼先の列挙は `requested_reviewers` やオーナー情報・会話コンテキストを併用する。
 - **権限レベルは API で報告されない**: コラボレータ列挙ツールが無いため、permission フィールドによる権限判定はできない（`list_collaborators` のレスポンスに permission フィールドが無い、という旧記載はツール非存在により該当しない）。
@@ -77,7 +77,7 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 - **main への直接 push 前も必ず fetch → rebase で最新化する（2026-08 実測）**: Skill Update Rules によるスキル更新など main への直接コミット・push でも、ローカル main が古いままだと並行セッションのコミットでリモートが先行している場合に `! [rejected] main -> main (fetch first)` で push が拒否される（2026-08 実測）。対処は push 前に必ず `git fetch origin main` → `git rebase origin/main`（または merge）で最新化してから push すること。fetch/rebase は coder（builder 配下）に委譲する（pusher は push のみ、committer は identity 未設定・allowlist 制約で実施不可）。
 - **@ric_ 版サーバーでは `forgejo_list_pull_review_comments` が MCP エラーで失敗しうる（2026-08-22 実測）**: 本サーバー（@ric_ 版 2.34.0）では `forgejo_list_pull_review_comments` が全 PR で `-32603: GetReviewByID` のサーバー側エラーになり、インラインコメント本文を取得できない。`list_pull_reviews` の `comments_count: 0` を根拠に「インラインコメントなし」と断定せず、通常コメント（`list_issue_comments`）とレビュー（`list_pull_reviews`）で指摘を見落とさないこと。
 - **PR 詳細は `forgejo_get_pull_request` ではなく `forgejo_get_pull_request_by_index`（@ric_ 版）**: `forgejo_get_pull_request` は存在しない（MCP 2.34.0 実測）。
-- **@ric_ 版では `forgejo_list_user_repos` / `forgejo_list_org_repos` / `forgejo_list_collaborators` / `forgejo_get_user` / `forgejo_list_repo_labels` / `forgejo_list_orgs` が存在しない**: 自分のリポジトリ一覧は `forgejo_list_my_repos`、組織判定は `forgejo_list_my_orgs` を使う（2026-08-23 実測で `forgejo_list_orgs` が存在せず `forgejo_list_my_orgs` が利用可と確認）。
+- **@ric_ 版では `forgejo_list_user_repos` / `forgejo_list_org_repos` / `forgejo_list_collaborators` / `forgejo_get_user` / `forgejo_list_orgs` が存在しない**: 自分のリポジトリ一覧は `forgejo_list_my_repos`、組織判定は `forgejo_list_my_orgs` を使う（2026-08-23 実測で `forgejo_list_orgs` が存在せず `forgejo_list_my_orgs` が利用可と確認）。ただし `forgejo_list_repo_labels` は実在する（2026-08-26 実測）。
 
 ## Prerequisites
 
