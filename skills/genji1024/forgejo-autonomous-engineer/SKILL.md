@@ -87,6 +87,7 @@ description: autonomous-engineer（基底スキル）のForgejoインスタン�
 - **`list_pull_review_comments` がサーバー側エラー（`GetReviewByID`）で失敗する環境がある（2026-08-22 実測）**: 実行時に観測したところ、`list_pull_review_comments` が全 PR で `-32603: GetReviewByID` のサーバー側エラーになり、インラインコメント本文を取得できない環境があった。再発時は「インラインコメントなし」と断定せず、通常コメント（`list_issue_comments`）とレビュー（`list_pull_reviews`）で指摘を見落とさないこと。公開リポジトリであれば認証なし REST API（`Authorization` ヘッダ無しの `curl`）でインラインコメント・files 一覧を取得できるため、MCP エラー時のフォールバックとして試すこと。
 - **PR 詳細取得ツールの実在は実行時に確認する（2026-08 実測）**: 実行時に確認した環境では `get_pull_request` が存在せず、`get_pull_request_by_index`（owner/repo/index 指定）で取得できた。どちらのツールが存在するかは実装により異なるため、セッション開始時の判定で利用可能なツール一覧を確認してから使うこと。
 - **リポジトリ・ユーザ・組織系ツールの実在は実行時に確認する（2026-08 実測）**: 実行時に確認した環境では `list_user_repos` / `list_org_repos` / `list_collaborators` / `get_user` / `list_orgs` が存在せず、代わりに `list_my_repos`（自分のリポジトリ一覧）・`list_my_orgs`（組織判定）が利用できた。`list_repo_labels` は実在する（2026-08-26 実測）。どのツールが存在するかは実装により異なるため、各ツールは実行時に存在確認してから使うこと。
+- **2026-09-02 実測: このエラーは review id を省略した呼び出しで発生する場合があり、再試行時に review id を指定すると成功する**: MCP の `create_pull_review` / `create_pull_review_comment` 系で review id なしの呼び出しが `GetReviewByID` エラーになる場合の再試行ヒント。省略せず明示的に review id を渡す。
 
 ## Prerequisites
 
