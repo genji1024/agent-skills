@@ -1,13 +1,13 @@
 ---
 name: environment
-description: Facts about the host/container runtime environment that opencode executes in. Load this skill before running shell commands that depend on OS, package manager, filesystem layout, or service availability.
+description: Facts about the host and the containers that opencode and Claude Code execute in (g-ohara/dotfiles opencode container, genji1024/containerized-agents claude-code container). Load this skill before running shell commands that depend on OS, package manager, filesystem layout, Docker, or service availability.
 ---
 
 # SKILL: Execution Environment
 
 ## Overview
 
-This skill records the fixed facts about *where* opencode is running. Use it whenever a shell command depends on the operating system, package manager, init system, or filesystem layout. Check the relevant section before running a command — do not assume a generic Linux environment.
+This skill records the fixed facts about *where* opencode and Claude Code are running — each in its own container, with different tools (Docker is available to Claude Code, not to opencode). Use it whenever a shell command depends on the operating system, package manager, init system, or filesystem layout. Check the relevant section before running a command — do not assume a generic Linux environment.
 
 ## Architecture
 
@@ -45,7 +45,7 @@ OpenCode runs two agents to keep the expensive model's token usage down:
 
 If you're reasoning about "why can't I read this file / run this command", check which agent is active first — `orchestrator` denying itself these tools is expected behavior, not a bug.
 
-## Rules for shell commands
+## Rules for shell commands (opencode container)
 
 1. **Do NOT use Arch/pacman here.** The container is Debian. `pacman`, `yay`, `reflector`, `systemctl --user` (host units) are not available. If a package must be installed, use `apt-get` — and prefer not to install anything (the host intentionally keeps the environment clean).
 2. **No Docker inside.** The Docker daemon socket is *not* mounted into the opencode container. `docker`, `docker compose`, spawning sibling containers — none of these work from here. (The Neovim container is the one that talks to the host daemon via `${XDG_RUNTIME_DIR}/docker.sock`; opencode does not.)
@@ -55,6 +55,43 @@ If you're reasoning about "why can't I read this file / run this command", check
 6. **`~` maps to `/root`** inside the container (we run as `user: root`). `${HOME}` env may be inherited — when a path must resolve to the mounted config, prefer the `/root/...` target paths or `${HOME}` rather than guessing.
 7. **Pre-installed tools**: `node` (v26.x), `npm`, `git`, `curl`, `opencode`, `difit`. Use these directly instead of looking for host binaries. `glab` is **not** available inside the opencode container — GitLab access goes through the `gitlab-mcp` MCP server container (HTTP at `http://gitlab-mcp:3002/mcp`), or via the `gitlab_*` MCP tools exposed through opencode.
 8. **GUI/X11 not assumed.** Other services in the compose file (e.g. `firefox`) mount `/tmp/.X11-unix` and `DISPLAY`; the opencode service does **not**. Do not attempt to launch GUI apps from this container.
+
+## Claude Code container (genji1024/containerized-agents)
+
+Claude Code runs in the `claude-code` service of containerized-agents'
+`compose.yaml`, built from `dockerfiles/claude-code/Dockerfile`.
+
+- **Base**: `docker:27-dind` (Alpine) with Node copied in; `privileged: true`.
+  The entrypoint starts `dockerd` (so `docker` and `docker compose` work
+  inside, as Docker-in-Docker), links the skills (below), then runs `claude`.
+- **Tools**: `bash`, `git`, `curl`, `jq`, `python3`, `make`, `node`, `npm`,
+  `docker`. No `openssl` unless installed.
+- **Mounts**: `${PWD}` as itself; `~/.claude/` from
+  `containerized-agents/.config/claude-code/.claude/` (only `settings.json`
+  is tracked there, everything else is git-ignored); `~/.agents/skills` from
+  `agent-skills/skills`. The entrypoint links each skill into
+  `~/.claude/skills/<name>` — Claude Code does not read `~/.agents/skills`
+  (see [`writing-skills`](../writing-skills/SKILL.md)).
+- **Not the DinD image?** If `docker` and `python3` are missing, PID 1 is
+  `claude` itself and `/usr/local/bin` holds only `node`/`npm`/`claude`, the
+  container was started from a plain Node image instead. Nothing Docker-based
+  can be verified then; tell the user (rebuild with
+  `docker compose build claude-code`) rather than working around it.
+- **Memory**: the host has about 4 GB. A full browser E2E stack (Traefik,
+  Synapse, PostgreSQL, the app and Playwright) fits once; repeated runs get
+  killed.
+- **Scripting**: when `python3` is absent, use `node -e` / heredocs for file
+  edits and checks.
+
+## Rootless Docker on the host
+
+- Files a container writes into a bind mount belong to sub-uids; the host
+  user cannot delete them. Remove them through a container:
+  `docker run --rm -v "$PWD/data:/data" alpine rm -rf /data/<dir>`.
+- Never run a project's setup script with `sudo`: it leaves root-owned files
+  the rootless daemon cannot use.
+- Behind rootless port forwarding every client shows up with one source IP,
+  so per-IP rate limits apply to everyone together.
 
 ## When to Load This Skill
 

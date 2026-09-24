@@ -1,9 +1,22 @@
 ---
 name: pr-workflow
-description: genji1024 配下のリポジトリ（private-note, private-opencode-server など）共通のPR作成・レビュー対応・CI検証ワークフロー。Assignee/Reviewer設定、レビューコメント処理、プッシュ前検証を行う際に使う。
+description: genji1024 配下のリポジトリ（private-note, private-opencode-server, koto など）共通のコミットの身元・PR作成・レビュー対応・CI検証ワークフロー。コミットを作る時、Assignee/Reviewer設定、レビューコメント処理、プッシュ前検証を行う際に使う。
 ---
 
 # PR Workflow
+
+## コミットの身元
+
+誰の指示で作るコミットかで author / committer を変える。
+
+- **対話セッションで本人（genji1024）が指示したコミット**: 本人の身元
+  `genji1024 <contact@genji1024.com>` にする。author と committer の両方。
+  リポジトリに `git config user.name` / `user.email` を設定して以後も揃える。
+  履歴を書き換えて揃えるよう頼まれた場合も両方を直す。
+- **自律エンジニアとして作る PR のコミット**: bot の身元にする（詳細は
+  [`forgejo-autonomous-engineer`](../forgejo-autonomous-engineer/SKILL.md) の既知の制約）。
+
+コミット後は `git log -1 --format='%an <%ae> | %cn <%ce>'` で両方を確認する。
 
 ## PR 作成ルール
 

@@ -40,6 +40,7 @@ When the task or request mentions any of the following, load the corresponding a
 - GitLab Issue/MR operations, comments, or review on the cpp-coursework project (e.g. "Read Issue #7", "Review MR #N") → [`mr-review`](../cpp-coursework/mr-review/SKILL.md) (uses `gitlab_*` MCP tools served by the `gitlab-mcp` container)
 - Documentation creation/modification on the cpp-coursework project → [`doc-writing`](../cpp-coursework/doc-writing/SKILL.md)
 - Commit message writing or `/commit-message` (any project) → [`commit-message`](../commit-message/SKILL.md)
+- Work on the koto repository (Matrix client + Synapse stack) → [`koto`](../genji1024/koto/SKILL.md)
 
 These skills provide task-specific workflows (e.g., review guidelines for MRs, formatting styles for Markdown docs, commit formats). Load them automatically when the relevant keywords/commands appear in the user's request, in addition to the always-loaded `general` skill.
 
@@ -56,7 +57,23 @@ These skills provide task-specific workflows (e.g., review guidelines for MRs, f
    - Never commit without showing the diff first
    - Reconfirm the next action when the user's response is hesitant
 
-4. **Update ignore configuration.** If a task involves creating files that should not be tracked by version control (plan files, generated content, build artifacts, cache files), update the project's ignore configuration (`.gitignore`, `.dockerignore`, or equivalents) as part of the write operation.
+4. **Read a repository by cloning it.** To read or summarize a repository on a
+   forge, `git clone` it and read it locally. Do not fetch it file by file
+   through MCP tools (the user corrected this).
+
+5. **Confirm a design before building it.**
+   - For a new feature with real design choices, present the plan first:
+     what you will decide yourself, and the few choices that need the user.
+   - If, mid-task, you decide to replace the approach the user agreed to,
+     stop and confirm before implementing it. Do not switch silently.
+
+6. **Say at once when the environment lost something.** If a tool that
+   worked earlier in the session (e.g. `docker`, `python3`) is gone, the
+   container was most likely relaunched from a different image. Tell the user
+   right away, with the evidence, instead of working around it and leaving
+   verification undone.
+
+7. **Update ignore configuration.** If a task involves creating files that should not be tracked by version control (plan files, generated content, build artifacts, cache files), update the project's ignore configuration (`.gitignore`, `.dockerignore`, or equivalents) as part of the write operation.
 
 ## When to Load This Skill
 

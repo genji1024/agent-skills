@@ -23,6 +23,11 @@ Regardless of how this skill is triggered, the following formatting rules strict
         - *Top-level bullets:* Abstract intent or purpose (the "why").
         - *Sub-bullets:* Concrete changes (the "what").
 - *Content (Semantic over Literal):* Describe the "why" and "what" in plain English. DO NOT just quote code changes. Avoid referencing specific code values, command flags, or identifiers unless strictly necessary. Use backticks sparingly.
+- *Scopes:* If the history uses Conventional Commits scopes, give **every**
+  commit one, from a fixed vocabulary for that repo (areas such as
+  `diary`, `init`, `compose`). For `docs`/`test` types, the scope is the
+  area touched (`docs(readme)`, `test(e2e)`), never the type repeated
+  (`docs(docs)`). Omitting scopes on some commits reads as inconsistency.
 - *Syntax:* Use Markdown style, NOT HTML.
 - *Language:* English by default. Write the commit message in English unless the repository's own commit history is consistently written in another language. The language of the issue, PR, or request does not matter — keep the commit message in English.
 
@@ -54,6 +59,16 @@ Here the top-level bullet `- Add token rotation to harden session security` stat
 ```
 
 Every bullet must lead with an abstract top-level bullet explaining the "why" and nest the concrete "what" changes beneath it as 2-space-indented sub-bullets. A flat literal file-operation list is non-compliant.
+
+### Checking lengths mechanically
+
+Length limits slip easily with a scope prefix. Before committing (or after
+rewriting many messages), check them rather than eyeballing:
+
+```sh
+git log --format=%s <range> | awk 'length > 50 { print length": "$0 }'
+git log --format=%b <range> | awk 'length > 72 { print length": "$0 }'
+```
 
 ---
 
