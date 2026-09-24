@@ -15,11 +15,20 @@ description: How to add, edit, or restructure a skill file in this ~/.agents/ski
 This directory is shared across unrelated projects and read by two different
 tools with different discovery rules:
 
-- **Claude Code only discovers direct children of `skills/`**
-  (`skills/<name>/SKILL.md`). Anything nested one level deeper never appears
-  in its available-skills list — confirmed empirically, not documented
-  behavior to assume elsewhere.
-- **OpenCode reads the whole tree recursively.**
+- **OpenCode reads the whole tree recursively** from `~/.agents/skills`.
+- **Claude Code does not load `~/.agents/skills` at all** — it only treats
+  it as a source for its import command. It loads `~/.claude/skills` and
+  `<project>/.claude/skills`, and only one level down (`*/SKILL.md`).
+  To bridge that, `install.sh` (on a host) and the claude-code container's
+  entrypoint (containerized-agents) link **every leaf skill directory flat**
+  into `~/.claude/skills/<basename>`, so nested skills are visible to Claude
+  Code too.
+
+Because of that flattening:
+
+- A skill directory's basename must be **unique across the whole tree**
+  (`genji1024/koto` and `someone/koto` would collide).
+- The frontmatter `name` must equal the directory's basename.
 
 Decision rule:
 
@@ -28,8 +37,8 @@ Decision rule:
    itself) → top-level (`skills/<name>/`). This makes it visible to both tools.
 2. **Specific to one repo** (hardcodes a DB, a user model, a URL, a build
    convention that only that repo uses) → nest under `skills/<owner>/<project>/`,
-   e.g. `skills/genji1024/private-note/`. Only OpenCode will see it — that's
-   fine, Claude Code sessions on unrelated repos don't need it anyway.
+   e.g. `skills/genji1024/private-note/`. Its description must name the
+   repo, since both tools list it in every session.
 3. **Shared by several repos under one owner, but not universal** (e.g. a
    PR/CI convention two of that owner's repos happen to both use) → sits
    directly under `skills/<owner>/`, a sibling of the project folders, not
@@ -80,6 +89,7 @@ gotchas. Don't explain what a PDF is before showing how to parse one.
 - [ ] `name`/`description` valid per the rules above
 - [ ] Description names what it does + when to use it + (if project-specific) which repo
 - [ ] Placed per the decision rule above (top-level vs `<owner>/` vs `<owner>/<project>/`)
+- [ ] Directory basename unique across the tree and equal to `name`
 - [ ] No content duplicated from a sibling skill — link instead
 - [ ] Every relative link in the file actually resolves
 - [ ] No stale project names or time-sensitive claims
