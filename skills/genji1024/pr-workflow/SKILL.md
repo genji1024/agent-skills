@@ -52,6 +52,32 @@ description: genji1024 配下のリポジトリ（private-note, private-opencode
 
 **両方を毎回チェックすること** — 片方だけではレビュー指摘を見逃す。
 
+### 指摘の読み方
+
+短い指摘がどれを指しているか、二通り以上に読めるときは、推測で直さずに先に聞く
+（実例: koto PR #24 の「checkbox をクリックで切り替えられるように」は、入力欄の
+オプションではなく、送信済みメッセージの Markdown のタスクリストのことだった）。
+
+### 返信はスレッドごとに
+
+インラインの指摘には、**その指摘のスレッドに 1 件ずつ**返信する。PR の通常コメントに
+まとめて書かない。
+
+Forgejo の API には「コメントに返信」が無い。元のレビューにコメントを足すと
+同じスレッドに入る（2026-10 実測）:
+
+```sh
+curl -X POST -H "Authorization: token $FORGEJO_TOKEN" -H 'Content-Type: application/json' \
+  "$FORGEJO_URL/api/v1/repos/<owner>/<repo>/pulls/<N>/reviews/<review id>/comments" \
+  -d '{"path": "<元の path>", "new_position": <元の position>, "body": "..."}'
+```
+
+- `path` と行は元のコメント（`GET .../reviews/<review id>/comments`）から取る。
+  変更前の側（左）の行への指摘は `old_position` に入れる。差分のプレビューで
+  `lines-num-old` と `lines-num-new` のどちらの行かを確かめる
+- 新しいレビュー（`POST .../pulls/<N>/reviews`）に同じ行で書くと、**別の会話**になる
+- 返信したら PR のページで、元の会話にまとまったか確かめる
+
 ### 修正後のフロー
 
 1. 指摘事項を分析し修正
