@@ -67,8 +67,25 @@ This skill lists what those do not say, or what cost time to find out.
 - `client/e2e/run.sh` runs in a throwaway copy of the repo under separate
   compose project names. Keep it that way: resetting the stack in the
   checkout would wipe the real `.env` and `data/`.
-- koto opens on the chat tab; E2E steps that expect the diary must click the
-  日記 tab first.
+- koto opens on the ルーム (Rooms) tab. Tab labels can be renamed in settings,
+  so `e2e.mjs` looks them up through `settingsTab` rather than literals.
+- Without Docker (a sandbox), use `client/e2e/run-local.sh [integration|e2e]`
+  (see docs/development.md). What it took to get there:
+  - The checkout's `client/node_modules` may come from an Alpine container
+    (musl native bindings) and fail on a glibc host. The script works in a
+    copy with its own `npm ci`; do the same for ad-hoc tsc/lint/tests.
+  - Playwright 1.58.0's `playwright install chromium` hangs while unpacking
+    under Node 26; the script pins 1.64.0. Chromium also needs its shared
+    libraries on the host.
+  - The service-worker steps need the preview server to answer like
+    `client/nginx.conf`: no-store on `/config.json`, `/index.html`,
+    `/sw.js`, and `preview.cors: false`. vite preview's CORS adds
+    `Vary: Origin`, cached assets never match, and the offline start fails.
+    Keep the no-store list in `vite.config.ts` in sync with nginx.conf.
+  - The integration tests expect server name `matrix.example.com` for a
+    server on 127.0.0.1.
+  - On a small host, run one server set at a time; both scripts stop their
+    servers and delete their data on exit.
 - Push cannot be tested headless (Chromium always denies notification
   permission) or in incognito contexts (no Push API): `client/e2e/push.mjs`
   runs headed with a persistent profile under `xvfb-run`.
