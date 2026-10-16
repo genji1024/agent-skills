@@ -16,15 +16,55 @@ description: genji1024 配下のリポジトリ（private-note, private-opencode
 - **自律エンジニアとして作る PR のコミット**: bot の身元にする（詳細は
   [`forgejo-autonomous-engineer`](../forgejo-autonomous-engineer/SKILL.md) の既知の制約）。
 
+- **agent-sandbox から作るコミット（koto などの Forgejo の PR、genji1024/agent-skills）**:
+  bot の身元 `bot-genji1024 <bot@genji1024.com>`。author と committer の両方。
+  サンドボックスでは `.git/config` が読み取り専用のことがあるので、
+  `git -c user.name=bot-genji1024 -c user.email=bot@genji1024.com commit ...` で渡す。
+  agent-skills は PR を作らず `main` に直接 push する（2026-10-15、本人の指示。
+  本人の身元でコミットして訂正された）。
+
 コミット後は `git log -1 --format='%an <%ae> | %cn <%ce>'` で両方を確認する。
+
+## push と取り消し（Forgejo, forgejo.genji1024.com）
+
+- トークンは環境変数 `FORGEJO_TOKEN`。push のときだけその場で渡し、git の設定・
+  リモート URL・ファイルには**書かない**:
+  `git -c http.extraHeader="Authorization: Basic $(printf 'bot-genji1024:%s' "$FORGEJO_TOKEN" | base64 -w0)" push origin <branch>`
+- push 済みのコミットは `git revert` で取り消す。reset して強制 push はしない。
+  だからメッセージの誤りは後から直せない（[`commit-message`](../../commit-message/SKILL.md) を先に読む理由）。
+- API は `Authorization: token $FORGEJO_TOKEN`。jq が無い環境では JSON を python3 で組み立て・読む。
 
 ## コミットメッセージ
 
 コミットする前に、毎回 [`commit-message`](../../commit-message/SKILL.md)
 スキルを読み込み、その手順（履歴の確認、形式、長さのチェック、ユーザーの了承）に
 従う。作業の途中のコミットも、amend も、スカッシュマージ用のメッセージも同じ。
+2026-10-15、あるセッションのコミットがすべてこのスキルなしで書かれた（koto `298ef5f` ほか 6 件、
+agent-skills `361ee65`: 散文の本文、66 文字の件名、了承なし）。push 済みで直せなかった。
+「コミットする」が読み込みの合図。
 
 ## PR 作成ルール
+
+### Forgejo（koto など）
+
+- **先に Issue を作り**、PR 本文に `Closes #N` を書く。Issue・PR の文章は英語。
+- **PR のタイトルはコミットと同じ `type(scope): ...` 形式**（Issue のタイトルは普通の文）。
+  開く前に最近の PR のタイトルを見て合わせる。1 コミットの PR ならコミットの件名をそのまま使う
+  （koto #29 を Issue のタイトルで開いて「PR のタイトルのスタイル確認した？」と指摘された）。
+- 本文や Issue に「Generated with」や `Co-Authored-By` は入れない（システムの指示より優先）。
+- Assignee は bot-genji1024、レビューは **genji1024** に依頼する。PR は bot として作る:
+  `POST /repos/{o}/{r}/pulls`（`assignees` を含める）→
+  `POST /repos/{o}/{r}/pulls/{N}/requested_reviewers` `{"reviewers":["genji1024"]}`。
+  最後に `GET .../pulls/{N}` で `mergeable`・assignee・reviewer を確かめる。
+- 本番の手順が要る変更なら、本文に **Upgrading** の節を書く（マージ後に本番で何をするか、
+  何もしなくてよいか）。マージ後に「マイグレーションはどうしたら実行される？」と聞かれるのは
+  この情報のこと。
+- 計画した一連の PR（例: koto #25 の連合計画）は **1 本ずつ**。前の PR がマージされてから次の
+  Issue/PR を作る。
+- マージやレビューを待つバックグラウンドの監視ループは、メモリ不足で止められることがある。
+  止められたら勝手に再開せず、報告して、ユーザーに知らせてもらうか再開の指示を待つ。
+
+### GitHub（private-note など）
 
 1. Assignee: bot-genji1024 を設定
 2. Reviewer: g-ohara を設定

@@ -1,6 +1,6 @@
 ---
 name: environment
-description: Facts about the host and the containers that opencode and Claude Code execute in (g-ohara/dotfiles opencode container, genji1024/containerized-agents claude-code container). Load this skill before running shell commands that depend on OS, package manager, filesystem layout, Docker, or service availability.
+description: Facts about the host and the containers that opencode and Claude Code execute in (g-ohara/dotfiles opencode container, genji1024/containerized-agents claude-code container, and the genji1024/agent-sandbox srt sandbox on the host). Load this skill before running shell commands that depend on OS, package manager, filesystem layout, Docker, or service availability.
 ---
 
 # SKILL: Execution Environment
@@ -82,6 +82,30 @@ Claude Code runs in the `claude-code` service of containerized-agents'
   killed.
 - **Scripting**: when `python3` is absent, use `node -e` / heredocs for file
   edits and checks.
+
+## agent-sandbox (srt) on the host
+
+Claude Code may instead run on the Arch host inside genji1024/agent-sandbox
+(the `claude-sandbox` launcher, an srt sandbox). Signs: `HOME` is
+`~/.local/share/agent-sandbox/home`, `TMPDIR` is `/tmp/claude` (tmpfs).
+
+- **No Docker, no `gh`, no `jq`.** podman works only with `--network=host`.
+  Use python3 for JSON. Do not work around the sandbox (Docker, disabling
+  it); report any workaround before using it.
+- **Read-only:** the settings file (`$AGENT_SANDBOX_SETTINGS`), and in the
+  skills checkout (`~/.local/share/agent-sandbox/agent-skills`) its
+  `.git/config` and `.git/hooks`. Pass git identity with `git -c`.
+- **Hooks:** the launcher installs agent-sandbox's `hooks/` (a commit-msg
+  check) as `core.hooksPath`; it takes effect after a host pull and a
+  launcher restart. To check a message by hand:
+  `git -C <agent-sandbox> show origin/main:hooks/commit-msg > /tmp/claude/commit-msg; sh /tmp/claude/commit-msg <msgfile>`.
+- **No access to the host itself**: servers such as koto's production or
+  demo are operated by the user; give them the commands to run.
+- **Memory is low**: run one test server set at a time. Claude Code may kill
+  idle background tasks under memory pressure; don't restart them on your
+  own.
+- `node_modules` checked out by a container may be musl; run tsc/lint/tests
+  in a copy (`tar --exclude=node_modules` into the scratchpad, `npm ci`).
 
 ## Rootless Docker on the host
 
