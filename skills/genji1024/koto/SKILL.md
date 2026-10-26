@@ -162,7 +162,7 @@ Put an **Upgrading** section in each PR body saying which applies.
   UI label in Japanese with an English gloss: **メンバー** (Members).
 - Don't write "家族" (family) in UI or docs: the audience is any closed group.
 - Before every commit, load [`commit-message`](../../commit-message/SKILL.md)
-  and follow it (format, length checks, the user's approval). This skill's
+  and follow it (format, length checks). This skill's
   scope list does not replace it.
 - Commit scopes — client: `app`, `setup`, `chat`, `diary`, `notes`, `todo`,
   `calendar`, `members`, `profile`, `settings`, `pwa`, `push`, `media`,

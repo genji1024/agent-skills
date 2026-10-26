@@ -127,7 +127,7 @@ Step 0 で決まった担当リポジトリごとに、必ず以下を取得す�
      - verifierに依頼した動作確認の結果を、orchestratorが直接確認する（サブエージェントに丸投げしない）
      - 検証結果に不備がある場合、理由を特定し、PRに不備を隠蔽なく明記した上でサブエージェントに再依頼する
      - 動作確認がスキップされた場合、その理由をPRコメントに明示し、隠蔽しない
-4. **コミットメッセージ**: コミットメッセージを作成する際は必ず [commit-message](../../commit-message/SKILL.md) スキルを参照し、その形式制約（Conventional Commits / Gitmoji、各行72文字以下、見出し約50文字以内）に従う。自律モードでは対話確認（`question` ツール）を省略し、形式制約のみを適用する
+4. **コミットメッセージ**: コミットメッセージを作成する際は必ず [commit-message](../../commit-message/SKILL.md) スキルを参照し、その形式制約（Conventional Commits / Gitmoji、各行72文字以下、見出し約50文字以内）に従う
 　コミットメッセージ本文に `${VAR}` や `$PORT` を含む場合は、シェル変数展開で消える・空になる事故を防ぐため、`git commit -m` は単一引用符（または heredoc）で囲んで渡すこと。
 5. **push前のコミットメッセージ準拠チェック（必須）**: **push を完了報告する【前】に**、verifier が [commit-message](../../commit-message/SKILL.md) スキルに沿ってコミットメッセージを検証する。具体的には:
    - subject が Conventional Commits / Gitmoji 形式で **50文字以内** か
