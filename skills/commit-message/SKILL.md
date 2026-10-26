@@ -1,6 +1,6 @@
 ---
 name: commit-message
-description: Writes git commit messages in the repository's own format (Conventional Commits or Gitmoji, ≤50-char subject, bulleted why/what body, ≤72-char lines) and gets the user's approval first. Load it before EVERY git commit in any repository — including commits made mid-task, amends, reverts you write, and messages drafted for squash merges — not only when asked for a message.
+description: Writes git commit messages in the repository's own format (Conventional Commits or Gitmoji, ≤50-char subject, bulleted why/what body, ≤72-char lines). Load it before EVERY git commit in any repository — including commits made mid-task, amends, reverts you write, and messages drafted for squash merges — not only when asked for a message.
 ---
 
 # SKILL: Commit Message Generation
@@ -90,17 +90,8 @@ git log --format=%b <range> | awk 'length > 72 { print length": "$0 }'
     - Determine the most impactful change for the headline.
     - Group the rest into body bullets.
     - Apply rules from `1. FORMATTING CONSTRAINTS`.
-5.  *Confirm Headline:*
-    - *ACTION:* Use the `question` tool.
-    - *PROMPT:* `"Does the first line look like this: <first line>?"`
-6.  *Preview Full Message:*
-    - *ACTION:* Generate the full message (Plain text, NO code blocks).
-7.  *Ask for Approval:*
-    - *ACTION:* Use the `question` tool.
-    - *PROMPT:* `"Accept?"` (Include the full commit message in the question text for review).
-8.  *Handle User Response:*
-    - *IF ACCEPTED:* Output the exact message to `stdout` as plain text (no prompts, no code blocks) for easy copying.
-    - *IF REJECTED:* Use the `question` tool to ask `"What would you like to change?"`. Provide options. Receive feedback, then restart from *Step 4*.
+5.  *Output:*
+    - *ACTION:* Output the exact message to `stdout` as plain text (no prompts, no code blocks) for easy copying. Do not ask for approval.
 
 ---
 
@@ -112,4 +103,4 @@ git log --format=%b <range> | awk 'length > 72 { print length": "$0 }'
 1.  *Verify Staged Changes:* Use `git diff --cached` to ensure only staged changes are included.
 2.  *Read Commit History:* Always run `git log --format="%B"` (Must be multi-line command to preserve full bodies) to determine style.
 3.  *Generate Message:* Apply all rules from `1. FORMATTING CONSTRAINTS`.
-4.  *Confirm:* Always use the `question` tool to ask for the user's acceptance before proceeding with the commit.
+4.  *Check and Commit:* Check the lengths mechanically (see above), then commit. Do not ask the user to approve the message.
